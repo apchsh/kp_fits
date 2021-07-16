@@ -26,10 +26,6 @@ containing all the relevant info about the file, this way the fits library is
 decoupled from the code. This may change in future if it's decided 
 that it doesn't make sense... 
 
-
-Attributes
-----------
-
 """
 
 import argparse 
@@ -47,8 +43,11 @@ class validator():
 
     Attributes
     ----------
-    struct : dict 
+    _struct : dict 
         Containing the information of the file to be validated 
+    _log : list
+        List containing any errors / information about the validation checks
+
 
     Notes
     ----
@@ -59,13 +58,102 @@ class validator():
     """
 
     _struct = None 
+    _log = [] 
 
-    def _check_hdu_names(self): 
-        """Check required HDUs""" 
+    def _check_required_hdus(self): 
+        """Check required HDUs
+
+        Make sure the mandatory HDUs are present.
+        """ 
         
-        if not("APERTURE") in self._struct.keys(): 
-            print("APERTURE HDU missing") 
-    
+        test = True
+
+        required_hdus = ["APERTURE", "UV-PLANE", "KER-MAT", 
+                        "BLM-MAT", "KP-DATA", "KP-SIGM",
+                        "CWAVEL", "DETPA", "VIS-DATA"] 
+
+        for hdu_ in required_hdus:
+            if not(hdu_ in self._struct.keys()): 
+                test = False
+                self._log.append("Failed: mandatory %s hdu missing" % hdu_) 
+ 
+    def _check_num_hdus(self): 
+        """Check how many HDUs are present. 
+
+        Currently each file needs to have at least 7 HDUs including the Primary
+        one. Rough first check. 
+        """
+
+        if len(self._struct) < 7:
+            self._log.append("Failed: Too few HDUs to be a valid file.") 
+            test = False 
+        else:
+            self._log.append("Pass: sufficient HDUs found.") 
+            test = True 
+
+        return test 
+        
+    def _check_all_hdu_names(self): 
+        """Check HDU names
+
+        Check all HDUs for non-standard names and raises a warning message.
+        This is just for user info, so won't fail the validation. 
+        """
+        
+        standard_names = ["APERTURE", "UV-PLANE", "KER-MAT", 
+                        "BLM-MAT", "KP-DATA", "KP-SIGM",
+                        "CWAVEL", "DETPA", "VIS-DATA",
+                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
+
+        for hdu_name in self._struct.keys(): 
+
+            if not(hdu_name in standard_names):
+                self._log.append("Warning: %s is not a standard HDU name"
+                         % hdu_name) 
+
+        return True 
+
+    def _check_hdu_dimensions(self): 
+        """Check HDU dimensions 
+
+        Check the size of the data in each HDU and make sure it is consistent
+        across. This function has to deal with missing HDUs, so can provide
+        information even if other tests have failed. 
+
+        """
+
+        result = True #assume it'll pass
+
+        standard_names = ["APERTURE", "UV-PLANE", "KER-MAT", 
+                        "BLM-MAT", "KP-DATA", "KP-SIGM",
+                        "CWAVEL", "DETPA", "VIS-DATA",
+                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
+
+        #List of all the array size elements
+        num_kernels = []
+        num_frames = [] 
+        num_pix = [] 
+        num_aperture = []
+        num_waves = [] 
+        num_uv = [] 
+
+        #Iterate through the list of standard HDUs
+        for hdu in standard_names: 
+
+            #Check if it's present in the file 
+            if hdu in self._struct.keys(): 
+                
+                #Extract the dimensions and add it to each list 
+                if hdu == "APERTURE": 
+                    num_aperture.append(self._struct[hdu].dims[0]) 
+                if hdu == "UV-PLANE": 
+                    num_uv.append(self._struct[hdu].dims[0]) 
+
+                #!TODO complete the list for each aperture 
+
+        #!TODO: check each list is self consistent 
+
+        return True 
 
     def _validate(self): 
         """Run the validation
@@ -77,8 +165,17 @@ class validator():
 
         """ 
 
+        result = True #assume it will pass
+
         #List of requirements the file must meet 
-        self._check_hdu_names() 
+        if not(self._check_required_hdus()): result = False 
+        if not(self._check_num_hdus()): result = False 
+
+        #List of non-mandatory checks
+        self._check_all_hdu_names() 
+
+        #Display the results
+        print(self._log) 
 
     def __init__(self, struct): 
         """Initialise the class and run the validation
