@@ -14,10 +14,12 @@ TODO:
 #### Example:
 ```
 kp_fits % python validate.py V410Tau_kpfile.fits
+
 Validating V410Tau_kpfile.fits...
+
 *** V410Tau_kpfile.fits ***
 ----------------------------
-0 [6, 1, 192, 192]
+PRIMARY [6, 1, 192, 192]
 APERTURE [105, 3]
 UV-PLANE [204, 3]
 KER-MAT [100, 204]
@@ -28,13 +30,13 @@ CWAVEL [1]
 DETPA [6]
 VIS-DATA [6, 1, 204]
 ----------------------------
+
 PASS: all mandatory HDUs were found.
 PASS: sufficient HDUs found.
 PASS: Number of kernels is consistent
 PASS: Number of frames is consistent
-FAIL: Inconsistent number of apertures: 
-[105, 104]
+PASS: Number of pixels is consistent
 PASS: Number of wavelengths is consistent
 PASS: Number of uv-points is consistent
-WARNING: 0 is not a standard HDU name
+PASS: Number of apertures is consistent
 ```
