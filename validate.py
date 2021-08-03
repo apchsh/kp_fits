@@ -60,6 +60,22 @@ class validator():
     _struct = None 
     _log = [] 
 
+    _required_hdus = ["APERTURE", "UV-PLANE", "KER-MAT", 
+                    "BLM-MAT", "KP-DATA", "KP-SIGM",
+                    "CWAVEL", "DETPA", "VIS-DATA"] 
+
+    _standard_names = ["PRIMARY", "APERTURE", "UV-PLANE", "KER-MAT", 
+                        "BLM-MAT", "KP-DATA", "KP-SIGM",
+                        "CWAVEL", "DETPA", "VIS-DATA",
+                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
+
+    def _check_unique(self, list_, name): 
+        if len(list(set(list_))) == 1:
+            self._log.append("PASS: Number of %s is consistent" % name) 
+        elif len(list(set(list_))) >= 2: 
+            self._log.append("FAIL: Inconsistent number of %s: " % name)
+            self._log.append(list_) 
+
     def _check_required_hdus(self): 
         """Check required HDUs
 
@@ -68,15 +84,16 @@ class validator():
         
         test = True
 
-        required_hdus = ["APERTURE", "UV-PLANE", "KER-MAT", 
-                        "BLM-MAT", "KP-DATA", "KP-SIGM",
-                        "CWAVEL", "DETPA", "VIS-DATA"] 
-
-        for hdu_ in required_hdus:
+        for hdu_ in self._required_hdus:
             if not(hdu_ in self._struct.keys()): 
                 test = False
-                self._log.append("Failed: mandatory %s hdu missing" % hdu_) 
+                self._log.append("FAIL: mandatory HDU %s missing" % hdu_) 
  
+        if test == True:
+            self._log.append("PASS: all mandatory HDUs were found.") 
+
+        return test 
+
     def _check_num_hdus(self): 
         """Check how many HDUs are present. 
 
@@ -85,10 +102,10 @@ class validator():
         """
 
         if len(self._struct) < 7:
-            self._log.append("Failed: Too few HDUs to be a valid file.") 
+            self._log.append("FAIL: Too few HDUs to be a valid file.") 
             test = False 
         else:
-            self._log.append("Pass: sufficient HDUs found.") 
+            self._log.append("PASS: sufficient HDUs found.") 
             test = True 
 
         return test 
@@ -100,15 +117,10 @@ class validator():
         This is just for user info, so won't fail the validation. 
         """
         
-        standard_names = ["APERTURE", "UV-PLANE", "KER-MAT", 
-                        "BLM-MAT", "KP-DATA", "KP-SIGM",
-                        "CWAVEL", "DETPA", "VIS-DATA",
-                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
-
         for hdu_name in self._struct.keys(): 
 
-            if not(hdu_name in standard_names):
-                self._log.append("Warning: %s is not a standard HDU name"
+            if not(hdu_name in self._standard_names):
+                self._log.append("WARNING: %s is not a standard HDU name"
                          % hdu_name) 
 
         return True 
@@ -122,38 +134,111 @@ class validator():
 
         """
 
+        #!TODO: check the dimensions of each HDU in turn 
+        #!TODO: add the result boolean to if statements and return it 
+
         result = True #assume it'll pass
 
-        standard_names = ["APERTURE", "UV-PLANE", "KER-MAT", 
-                        "BLM-MAT", "KP-DATA", "KP-SIGM",
-                        "CWAVEL", "DETPA", "VIS-DATA",
-                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
-
         #List of all the array size elements
-        num_kernels = []
-        num_frames = [] 
-        num_pix = [] 
-        num_aperture = []
-        num_waves = [] 
-        num_uv = [] 
+        kernels = []
+        frames = [] 
+        pixels = [] 
+        apertures = []
+        wavelengths = [] 
+        uv_points = []
 
         #Iterate through the list of standard HDUs
-        for hdu in standard_names: 
+        for hdu in self._standard_names: 
 
             #Check if it's present in the file 
             if hdu in self._struct.keys(): 
                 
+                dims = self._struct[hdu]["dims"] 
+
                 #Extract the dimensions and add it to each list 
+                if hdu == "PRIMARY": 
+                    if len(dims) == 4: 
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        pixels.append(dims[2]) 
+                        pixels.append(dims[3]) 
+                    else:
+                        self._log.append(
+                        "FAIL: PRIMARY HDU has too few dimensions"
+                        ) 
+
                 if hdu == "APERTURE": 
-                    num_aperture.append(self._struct[hdu].dims[0]) 
+                    if len(dims) == 2: 
+                        apertures.append(dims[0]) 
+                        if dims[1] != 3:
+                            self._log.append(
+                            "FAIL: APERTURE HDU has incorrect dimensions"
+                            )
+                    else:
+                        self._log.append(
+                            "FAIL: APERTURE HDU has incorrect dimensions"
+                            )
+
                 if hdu == "UV-PLANE": 
-                    num_uv.append(self._struct[hdu].dims[0]) 
+                    uv_points.append(dims[0]) 
+                
+                if hdu == "KER-MAT": 
+                    kernels.append(dims[0])
+                    uv_points.append(dims[1]) 
+                
+                if hdu == "BLM-MAT": 
+                    uv_points.append(dims[0]) 
+                    apertures.append(dims[1])
+                
+                if hdu == "KP-DATA": 
+                    frames.append(dims[0])
+                    wavelengths.append(dims[1])
+                    kernels.append(dims[2]) 
+                
+                if hdu == "KP-SIGM": 
+                    frames.append(dims[0])
+                    wavelengths.append(dims[1])
+                    kernels.append(dims[2]) 
+                    if len(dims) == 4:
+                        kernels.append(dims[3]) 
 
-                #!TODO complete the list for each aperture 
+                if hdu == "CWAVEL": 
+                    wavelengths.append(dims[0]) 
 
-        #!TODO: check each list is self consistent 
+                if hdu == "DEPTA":
+                    frames.append(dims[0]) 
 
-        return True 
+                if hdu == "VIS-DATA": 
+                    frames.append(dims[0])
+                    wavelengths.append(dims[1])
+                    uv_points.append(dims[2])
+
+                if hdu == "KA-DATA": 
+                    frames.append(dims[0])
+                    wavelengths.append(dims[1])
+                    kernels.append(dims[2]) 
+                    
+                if hdu == "KA-SIGM": 
+                    frames.append(dims[0])
+                    wavelengths.append(dims[1])
+                    kernels.append(dims[2]) 
+                    if len(dims) == 4:
+                        kernels.append(dims[3]) 
+
+                if hdu == "CAL-MAT":
+                    kernels.appned(dims[2]) 
+ 
+        #!TODO: remove check_unique from function class 
+
+        #Now check that the items in each list are the same
+        self._check_unique(kernels, "kernels") 
+        self._check_unique(frames, "frames") 
+        self._check_unique(pixels, "pixels") 
+        self._check_unique(apertures, "apertures") 
+        self._check_unique(wavelengths, "wavelengths") 
+        self._check_unique(uv_points, "uv-points") 
+
+        return result
 
     def _validate(self): 
         """Run the validation
@@ -165,18 +250,23 @@ class validator():
 
         """ 
 
-        result = True #assume it will pass
-
         #List of requirements the file must meet 
-        if not(self._check_required_hdus()): result = False 
-        if not(self._check_num_hdus()): result = False 
+        check1 = self._check_required_hdus()
+        check2 = self._check_num_hdus()
+        check3 = self._check_hdu_dimensions() 
 
         #List of non-mandatory checks
         self._check_all_hdu_names() 
 
         #Display the results
-        print(self._log) 
+        for item in self._log:
+            print(item)  
 
+        if check1 and check2 and check3: 
+            return True
+        else:
+            return False 
+ 
     def __init__(self, struct): 
         """Initialise the class and run the validation
 
@@ -197,7 +287,8 @@ class validator():
         """ 
         
         self._struct = struct 
-        return self._validate() 
+        self._validate() 
+        return 
 
 
 def read_fits(filename, verbose=False): 
@@ -226,7 +317,7 @@ def read_fits(filename, verbose=False):
     #Open and read in the fits file 
     f = fitsio.FITS(filename)
 
-    if verbose: print("Validating %s..." % filename) 
+    if verbose: print("\nValidating %s..." % filename) 
 
     #Iterate through the extensions 
     for ext in f: 
@@ -234,7 +325,7 @@ def read_fits(filename, verbose=False):
         #Read in the extension information 
         ext_info = ext.get_info() 
         ext_header = ext.read_header()
-
+ 
         #Lets come up with a name under which to save the info 
         if len(ext_info["hduname"]) > 0: 
             name = ext_info["hduname"] 
@@ -245,10 +336,17 @@ def read_fits(filename, verbose=False):
 
         #Now lets store the useful information 
         struct[name] = {} 
-        struct[name]["dims"] = ext_info["dims"] 
         struct[name]["hdutype"] = ext_info["hdutype"] 
         struct[name]["header"] = ext_header 
-        
+  
+        #If it's an image it will have the dims keyword
+        if "dims" in ext_info.keys():
+            struct[name]["dims"] = ext_info["dims"] 
+            struct[name]["type"] = "IMAGE"
+        else:
+            struct[name]["dims"] = [ext_info["nrows"], ext_info["ncols"]] 
+            struct[name]["type"] = "TABLE"
+
     #Finally close the file
     f.close()
 
@@ -266,7 +364,7 @@ def summary(struct, filename):
     """ 
 
     #preamble 
-    str_ = "*** %s ***" % filename 
+    str_ = "\n*** %s ***" % filename 
     print(str_) 
     print("-"*len(str_)) 
 
@@ -275,7 +373,7 @@ def summary(struct, filename):
         print(key, struct[key]["dims"]) 
 
     #final print 
-    print("-"*len(str_)) 
+    print("-"*len(str_)+"\n") 
  
 if __name__ == "__main__": 
 
