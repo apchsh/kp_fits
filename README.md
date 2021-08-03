@@ -12,7 +12,7 @@ TODO:
 - Add an end-to-end unit test on each of the files
 
 #### Example:
-
+```
 kp_fits % python validate.py V410Tau_kpfile.fits
 Validating V410Tau_kpfile.fits...
 *** V410Tau_kpfile.fits ***
@@ -37,3 +37,4 @@ FAIL: Inconsistent number of apertures:
 PASS: Number of wavelengths is consistent
 PASS: Number of uv-points is consistent
 WARNING: 0 is not a standard HDU name
+```
