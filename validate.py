@@ -234,10 +234,18 @@ class validator():
         self._check_unique(kernels, "kernels") 
         self._check_unique(frames, "frames") 
         self._check_unique(pixels, "pixels") 
-        self._check_unique(apertures, "apertures") 
         self._check_unique(wavelengths, "wavelengths") 
         self._check_unique(uv_points, "uv-points") 
 
+        #Check the number of apertures separately 
+        unique_ap = list(set(apertures))
+        if len(unique_ap) == 2:
+            if abs(unique_ap[0] - unique_ap[1]) == 1:        
+                self._log.append("PASS: Number of apertures is consistent")
+            else:
+                self._log.append("FAIL: Number of apertures is inconsistent") 
+                self._log.appned(apertures) 
+        
         return result
 
     def _validate(self): 
@@ -332,7 +340,11 @@ def read_fits(filename, verbose=False):
         elif len(ext_info["extname"]) > 0:
             name = ext_info["extname"] 
         else:
-            name = ext_info["extnum"] 
+            #check if it's the primary HDU
+            if ext_info["extnum"] == 0:
+                name = "PRIMARY"
+            else:
+                name = ext_info["extnum"] 
 
         #Now lets store the useful information 
         struct[name] = {} 
