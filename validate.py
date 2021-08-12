@@ -92,6 +92,8 @@ class validator():
                         "KA-DATA", "KA-SIGM", "CAL-MAT", "KP-COV", 
                         "KA-COV", "FULL-COV", "IMSHIFT"]
 
+    _required_keys = ["PSCALE", "DIAM", "EXPTIME"] 
+
     def _check_unique(self, list_, name):
         """Check HDU sizes are consistent
 
@@ -161,6 +163,27 @@ class validator():
 
         return True 
 
+    def _check_primary_header(self): 
+        """Check primary header keywords 
+
+        Function to check for mandatory keywords in the primary header 
+
+        """ 
+
+        result = True 
+        header = self._struct["PRIMARY"]["header"] 
+
+        #Iterate through the required keys and check for them 
+        for key in self._required_keys: 
+            if not(key in header.keys()): result = False 
+    
+        if result:
+            self._log.append("PASS: mandatory keywords present in PRIMARY HDU")
+        else:
+            self._log.append("FAIL: mandatory keywords are missing") 
+        
+        return result
+
     def _check_hdu_dimensions(self): 
         """Check HDU dimensions 
 
@@ -169,11 +192,6 @@ class validator():
         information even if other tests have failed. 
 
         """
-
-        #!TODO: check the dimensions of each HDU in turn 
-        #!TODO: add the result boolean to if statements and return it 
-
-        result = True #assume it'll pass
 
         #List of all the array size elements
         kernels = []
@@ -349,6 +367,7 @@ class validator():
         check1 = self._check_required_hdus()
         check2 = self._check_num_hdus()
         check3 = self._check_hdu_dimensions() 
+        check4 = self._check_primary_header() 
 
         #List of non-mandatory checks
         self._check_all_hdu_names() 
@@ -357,7 +376,7 @@ class validator():
         for item in self._log:
             print(item)  
 
-        if check1 and check2 and check3: 
+        if check1 and check2 and check3 and check4: 
             return True
         else:
             return False 
