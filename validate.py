@@ -1,7 +1,5 @@
 """Kernel Phase FITS Format Validator
 
-***TEST SCRIPT / WIP*** 
-
 This module is built to validate that FITS files containing kernel phases are
 saved in the standard (to be decided) format. Currently the module relies on
 the fitsio library to read in the file, and a validator class which check each
@@ -231,7 +229,7 @@ class validator():
                             )
 
                 #UV-points (N_UV x 3) 
-                if hdu == "UV-PLANET": 
+                if hdu == "UV-PLANE": 
                     result, log = dimension_check(dims, 2, hdu)
                     if result and dims[1] == 3: 
                         uv_points.append(dims[0])
@@ -280,7 +278,7 @@ class validator():
 
                 if hdu == "CWAVEL": 
                     result, log = dimension_check(dims, 2, hdu)
-                    if result and dim[1] == 2: 
+                    if result and dims[1] == 2: 
                         wavelengths.append(dims[0]) 
                     else:
                         self._log.append(log) 
@@ -322,7 +320,7 @@ class validator():
                 if hdu == "CAL-MAT":
                     result, log = dimension_check(dims, 2, hdu)
                     if result: 
-                        kernels.appned(dims[2]) 
+                        kernels.append(dims[1]) 
                     else:
                         self._log.append(log) 
 
