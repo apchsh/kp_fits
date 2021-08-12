@@ -33,6 +33,32 @@ import fitsio
 
 from os.path import exists
 
+def dimension_check(dims, req, hdu_name):
+    """HDU Dimension Check
+
+    Helper function which checks the number of HDU dimensions and then returns
+    a log message and a boolean value if they match the required number. 
+
+    Parameters
+    ----------
+    dims (list) : List of the dimensions of the HDU 
+    req (int) : required number of dimensions 
+    hdu_name (str) : HDU name as a string 
+
+    Returns
+    -------
+    result (bool) : True/false based on pass/fail
+    log (str) : A message to append to the log 
+
+    """
+    
+    log = "" 
+
+    if len(dims) == req: 
+        return True, log 
+    else:
+        return False, "FAIL: %s HDU has incorrect dimensions" % hdu_name 
+   
 class validator(): 
     """Validation class
 
@@ -47,14 +73,10 @@ class validator():
         Containing the information of the file to be validated 
     _log : list
         List containing any errors / information about the validation checks
-
-
-    Notes
-    ----
-
-    Todo
-    ----
-
+    _required_hdus : list
+        List containing the names of the mandatory HDUs
+    _standard_names : list 
+        List containing standardised names for optional HDU categories 
     """
 
     _struct = None 
@@ -67,9 +89,23 @@ class validator():
     _standard_names = ["PRIMARY", "APERTURE", "UV-PLANE", "KER-MAT", 
                         "BLM-MAT", "KP-DATA", "KP-SIGM",
                         "CWAVEL", "DETPA", "VIS-DATA",
-                        "KA-DATA", "KA-SIGM", "CAL-MAT"]
+                        "KA-DATA", "KA-SIGM", "CAL-MAT", "KP-COV", 
+                        "KA-COV", "FULL-COV", "IMSHIFT"]
 
-    def _check_unique(self, list_, name): 
+    def _check_unique(self, list_, name):
+        """Check HDU sizes are consistent
+
+        Checks that all the numbers in a list are the same. The list contains
+        values of dimensions from a number of HDUs which should all be
+        internally consistent
+
+        Parameters
+        ----------
+        list_ (list) : list of dimensions 
+        name (str) : HDU name 
+
+        """
+
         if len(list(set(list_))) == 1:
             self._log.append("PASS: Number of %s is consistent" % name) 
         elif len(list(set(list_))) >= 2: 
@@ -157,77 +193,128 @@ class validator():
 
                 #Extract the dimensions and add it to each list 
                 if hdu == "PRIMARY": 
-                    if len(dims) == 4: 
+                    result, log = dimension_check(dims, 4, hdu)
+                    if result: 
                         frames.append(dims[0])
                         wavelengths.append(dims[1])
                         pixels.append(dims[2]) 
                         pixels.append(dims[3]) 
                     else:
-                        self._log.append(
-                        "FAIL: PRIMARY HDU has too few dimensions"
-                        ) 
-
+                        self._log.append(log) 
+                
+                #Aperture (N_apertures x 3) 
                 if hdu == "APERTURE": 
-                    if len(dims) == 2: 
-                        apertures.append(dims[0]) 
-                        if dims[1] != 3:
-                            self._log.append(
-                            "FAIL: APERTURE HDU has incorrect dimensions"
-                            )
-                    else:
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result and dims[1] == 3: 
+                        apertures.append(dims[0])
+                    else: 
                         self._log.append(
                             "FAIL: APERTURE HDU has incorrect dimensions"
                             )
 
-                if hdu == "UV-PLANE": 
-                    uv_points.append(dims[0]) 
-                
-                if hdu == "KER-MAT": 
-                    kernels.append(dims[0])
-                    uv_points.append(dims[1]) 
-                
+                #UV-points (N_UV x 3) 
+                if hdu == "UV-PLANET": 
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result and dims[1] == 3: 
+                        uv_points.append(dims[0])
+                    else: 
+                        self._log.append(
+                            "FAIL: UV-PLANE HDU has incorrect dimensions"
+                            )
+                    
+                #KER-MAT (N_KER x N_UV) 
+                if hdu == "KER-MAT":
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result: 
+                        kernels.append(dims[0])
+                        uv_points.append(dims[1]) 
+                    else:
+                        self._log.append(log) 
+
+                #BLM-MAT (N_UV x N_AP) 
                 if hdu == "BLM-MAT": 
-                    uv_points.append(dims[0]) 
-                    apertures.append(dims[1])
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result:  
+                       uv_points.append(dims[0]) 
+                       apertures.append(dims[1])
+                    else:
+                        self._log.append(log) 
                 
+                #KP-DATA (N_FRAMES x N_WAVE x N_KER) 
                 if hdu == "KP-DATA": 
-                    frames.append(dims[0])
-                    wavelengths.append(dims[1])
-                    kernels.append(dims[2]) 
-                
+                    result, log = dimension_check(dims, 3, hdu)
+                    if result:                    
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        kernels.append(dims[2]) 
+                    else:
+                        self._log.append(log) 
+
+                #KP-SIGM (N_FRAMES x N_WAVE x N_KER) 
                 if hdu == "KP-SIGM": 
-                    frames.append(dims[0])
-                    wavelengths.append(dims[1])
-                    kernels.append(dims[2]) 
-                    if len(dims) == 4:
-                        kernels.append(dims[3]) 
+                    result, log = dimension_check(dims, 3, hdu)
+                    if result: 
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        kernels.append(dims[2]) 
+                    else:
+                        self._log.append(log) 
 
                 if hdu == "CWAVEL": 
-                    wavelengths.append(dims[0]) 
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result and dim[1] == 2: 
+                        wavelengths.append(dims[0]) 
+                    else:
+                        self._log.append(log) 
 
                 if hdu == "DEPTA":
-                    frames.append(dims[0]) 
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result:
+                        frames.append(dims[0]) 
+                    else:
+                        self._log.append(log) 
 
                 if hdu == "VIS-DATA": 
-                    frames.append(dims[0])
-                    wavelengths.append(dims[1])
-                    uv_points.append(dims[2])
+                    result, log = dimension_check(dims, 3, hdu)
+                    if result: 
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        uv_points.append(dims[2])
+                    else:
+                        self._log.append(log) 
 
                 if hdu == "KA-DATA": 
-                    frames.append(dims[0])
-                    wavelengths.append(dims[1])
-                    kernels.append(dims[2]) 
-                    
+                    result, log = dimension_check(dims, 3, hdu)
+                    if result: 
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        kernels.append(dims[2]) 
+                    else:
+                        self._log.append(log) 
+                   
                 if hdu == "KA-SIGM": 
-                    frames.append(dims[0])
-                    wavelengths.append(dims[1])
-                    kernels.append(dims[2]) 
-                    if len(dims) == 4:
-                        kernels.append(dims[3]) 
+                    result, log = dimension_check(dims, 3, hdu)
+                    if result: 
+                        frames.append(dims[0])
+                        wavelengths.append(dims[1])
+                        kernels.append(dims[2]) 
+                    else:
+                        self._log.append(log) 
 
                 if hdu == "CAL-MAT":
-                    kernels.appned(dims[2]) 
- 
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result: 
+                        kernels.appned(dims[2]) 
+                    else:
+                        self._log.append(log) 
+
+                if hdu == "IMSHIFT": 
+                    result, log = dimension_check(dims, 2, hdu)
+                    if result: 
+                        frames.append(dims[0]) 
+                    else:
+                        self._log.append(log) 
+
         #!TODO: remove check_unique from function class 
 
         #Now check that the items in each list are the same
