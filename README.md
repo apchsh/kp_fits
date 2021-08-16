@@ -13,24 +13,29 @@ TODO:
 
 #### Example:
 ```
-kp_fits % python validate.py V410Tau_kpfile.fits
-
-Validating V410Tau_kpfile.fits...
-
-*** V410Tau_kpfile.fits ***
-----------------------------
-PRIMARY [6, 1, 192, 192]
-APERTURE [105, 3]
-UV-PLANE [204, 3]
-KER-MAT [100, 204]
-BLM-MAT [204, 104]
-KP-DATA [6, 1, 100]
-KP-SIGM [6, 1, 100, 100]
-CWAVEL [1]
-DETPA [6]
-VIS-DATA [6, 1, 204]
-----------------------------
-
+kp_fits % python dummyfile.py test.fits
+kp_fits % python validate.py test.fits 
+Validating test.fits...
+*** test.fits ***
+------------------
+PRIMARY [9, 4, 16, 16]
+APERTURE [352, 3]
+UV-PLANE [153, 3]
+KER-MAT [499, 153]
+BLM-MAT [153, 352]
+KP-DATA [9, 4, 499]
+KP-SIGM [9, 4, 499]
+CWAVEL [4, 2]
+DETPA [9]
+VIS-DATA [9, 4, 153]
+KA-DATA [9, 4, 499]
+KA-SIGM [9, 4, 499]
+CAL-MAT [5, 499]
+KP-COV [9, 4, 499, 499]
+KA-COV [9, 4, 499, 499]
+FULL-COV [9, 4, 2, 499, 2, 499]
+IMSHIFT [9, 2]
+------------------
 PASS: all mandatory HDUs were found.
 PASS: sufficient HDUs found.
 PASS: Number of kernels is consistent
@@ -38,5 +43,5 @@ PASS: Number of frames is consistent
 PASS: Number of pixels is consistent
 PASS: Number of wavelengths is consistent
 PASS: Number of uv-points is consistent
-PASS: Number of apertures is consistent
+PASS: mandatory keywords present in PRIMARY HDU
 ```
