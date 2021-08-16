@@ -14,8 +14,11 @@ TODO:
 #### Example:
 ```
 kp_fits % python dummyfile.py test.fits
+
 kp_fits % python validate.py test.fits 
+
 Validating test.fits...
+
 *** test.fits ***
 ------------------
 PRIMARY [9, 4, 16, 16]
