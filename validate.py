@@ -82,15 +82,15 @@ class validator():
 
     _required_hdus = ["APERTURE", "UV-PLANE", "KER-MAT", 
                     "BLM-MAT", "KP-DATA", "KP-SIGM",
-                    "CWAVEL", "DETPA", "VIS-DATA"] 
+                    "CWAVEL", "DETPA", "CVIS-DATA"] 
 
     _standard_names = ["PRIMARY", "APERTURE", "UV-PLANE", "KER-MAT", 
                         "BLM-MAT", "KP-DATA", "KP-SIGM",
-                        "CWAVEL", "DETPA", "VIS-DATA",
+                        "CWAVEL", "DETPA", "CVIS-DATA",
                         "KA-DATA", "KA-SIGM", "CAL-MAT", "KP-COV", 
                         "KA-COV", "FULL-COV", "IMSHIFT"]
 
-    _required_keys = ["PSCALE", "DIAM", "EXPTIME"] 
+    _required_keys = ["PSCALE", "DIAM", "EXPTIME", "GAIN"] 
 
     def _check_unique(self, list_, name):
         """Check HDU sizes are consistent
@@ -290,12 +290,12 @@ class validator():
                     else:
                         self._log.append(log) 
 
-                if hdu == "VIS-DATA": 
-                    result, log = dimension_check(dims, 3, hdu)
-                    if result: 
-                        frames.append(dims[0])
-                        wavelengths.append(dims[1])
-                        uv_points.append(dims[2])
+                if hdu == "CVIS-DATA": 
+                    result, log = dimension_check(dims, 4, hdu)
+                    if result and dims[0] == 2: 
+                        frames.append(dims[1])
+                        wavelengths.append(dims[2])
+                        uv_points.append(dims[3])
                     else:
                         self._log.append(log) 
 

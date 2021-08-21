@@ -46,7 +46,7 @@ def create_dummy(filename):
     kp_data = np.zeros((num_frames, num_wavelengths, num_kernels)) 
     kp_sigm = np.zeros((num_frames, num_wavelengths, num_kernels))
     detpa = np.zeros((num_frames)) 
-    vis_data = np.zeros((num_frames, num_wavelengths, num_uv)) 
+    cvis_data = np.zeros((2, num_frames, num_wavelengths, num_uv)) 
 
     #CWAVEL is a table 
     cwavel = {} 
@@ -68,7 +68,7 @@ def create_dummy(filename):
     imshift["YSHIFT"] = np.zeros(num_frames) 
 
     #Create the primary header 
-    prim_header = {"PSCALE":3.14, "DIAM":1.62, "EXPTIME":2.72} 
+    prim_header = {"PSCALE":3.14, "DIAM":1.62, "EXPTIME":2.72, "GAIN":1.0} 
 
     #Open the file for writing
     with fitsio.FITS(filename, "rw") as f:  
@@ -83,7 +83,7 @@ def create_dummy(filename):
         f.write(kp_sigm, extname="KP-SIGM")     
         f.write(cwavel, extname="CWAVEL")
         f.write(detpa, extname="DETPA")     
-        f.write(vis_data, extname="VIS-DATA")     
+        f.write(cvis_data, extname="CVIS-DATA")     
 
         #Optional HDUs
         f.write(ka_data, extname="KA-DATA")     
