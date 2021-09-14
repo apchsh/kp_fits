@@ -68,7 +68,8 @@ def create_dummy(filename):
     imshift["YSHIFT"] = np.zeros(num_frames) 
 
     #Create the primary header 
-    prim_header = {"PSCALE":3.14, "DIAM":1.62, "EXPTIME":2.72, "GAIN":1.0} 
+    prim_header = {"PSCALE":3.14, "DIAM":1.62, "EXPTIME":2.72, "GAIN":1.0,
+            "CONTENT":"KFITS1"} 
 
     #Open the file for writing
     with fitsio.FITS(filename, "rw") as f:  

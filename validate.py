@@ -90,7 +90,7 @@ class validator():
                         "KA-DATA", "KA-SIGM", "CAL-MAT", "KP-COV", 
                         "KA-COV", "FULL-COV", "IMSHIFT"]
 
-    _required_keys = ["PSCALE", "DIAM", "EXPTIME", "GAIN"] 
+    _required_keys = ["PSCALE", "DIAM", "EXPTIME", "GAIN", "CONTENT"] 
 
     def _check_unique(self, list_, name):
         """Check HDU sizes are consistent
